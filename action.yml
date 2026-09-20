@@ -1,0 +1,40 @@
+name: "Mirror to Bitbucket"
+description: "Push-mirrors the caller repo to Bitbucket Cloud (clone --mirror + push --mirror) -- Bitbucket has no pull mirroring and no push-to-create, so the target repository must already exist there."
+
+inputs:
+  bitbucket-email:
+    description: "Atlassian account email, used with the API token to authenticate git over HTTPS"
+    required: true
+  bitbucket-token:
+    description: "Bitbucket API token (Bitbucket App Passwords are fully retired)"
+    required: true
+  bitbucket-workspace:
+    description: "Bitbucket workspace to mirror into"
+    required: true
+  bitbucket-repo:
+    description: "Bitbucket repository slug to mirror into, if it should differ from this repo's own name"
+    required: false
+    default: ${{ github.event.repository.name }}
+  github-token:
+    description: "Token used to clone this repository"
+    required: false
+    default: ${{ github.token }}
+
+runs:
+  using: composite
+  steps:
+    - shell: bash
+      env:
+        BITBUCKET_EMAIL: ${{ inputs.bitbucket-email }}
+        BITBUCKET_TOKEN: ${{ inputs.bitbucket-token }}
+        BITBUCKET_WORKSPACE: ${{ inputs.bitbucket-workspace }}
+        BITBUCKET_REPO: ${{ inputs.bitbucket-repo }}
+        GITHUB_TOKEN_INPUT: ${{ inputs.github-token }}
+      run: |
+        git clone --mirror "https://x-access-token:${GITHUB_TOKEN_INPUT}@github.com/${{ github.repository }}.git" mirror.git
+        cd mirror.git
+
+        # The email is used as the HTTP userinfo, so its "@" must be percent-encoded or git
+        # parses it as the userinfo/host separator instead.
+        EMAIL_ENC="${BITBUCKET_EMAIL//@/%40}"
+        git push --mirror "https://${EMAIL_ENC}:${BITBUCKET_TOKEN}@bitbucket.org/${BITBUCKET_WORKSPACE}/${BITBUCKET_REPO}.git"
