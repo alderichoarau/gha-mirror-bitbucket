@@ -6,10 +6,13 @@ Bitbucket has no pull mirroring and no push-to-create -- the target repository m
 ```yaml
 - uses: alderichoarau/gha-mirror-bitbucket@v1
   with:
-    bitbucket-email: ${{ secrets.BITBUCKET_MIRROR_EMAIL }}
     bitbucket-token: ${{ secrets.BITBUCKET_MIRROR_TOKEN }}
     bitbucket-workspace: alderic-hoarau
 ```
+
+`bitbucket-token` must be an **API token with scopes** (Settings -> API tokens with scopes on
+Bitbucket, not a plain Atlassian API token or an App Password -- both are retired/unscoped),
+granted only `read:repository:bitbucket` and `write:repository:bitbucket`.
 
 `bitbucket-repo` defaults to this repo's own name; set it to mirror into a differently-named
 Bitbucket repository instead.
